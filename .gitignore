@@ -5,3 +5,10 @@ build/
 .vscode/
 *~
 mono_crashes.log
+
+# Test logs and backups
+run*.log
+godot_stdout.txt
+godot_stderr.txt
+*.bak
+*.old
