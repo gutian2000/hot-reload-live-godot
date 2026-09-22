@@ -8,11 +8,16 @@
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
   </ItemGroup>
-  <!-- 热更由游戏进程内的 HotReloadRuntime 负责；不编译已停用的旧编辑器插件。 -->
+  <!-- Editor plugin lives in addons/ — excluded from compilation (runs in editor process) -->
   <ItemGroup>
     <Compile Remove="addons\**\*.cs" />
   </ItemGroup>
-  <!-- 自动把 0Harmony.dll 复制到 Godot 编译输出目录 -->
+  <!-- Dev-only spike tests — excluded from Godot project compilation -->
+  <ItemGroup>
+    <Compile Remove="spike\**\*.cs" />
+    <Compile Remove="spike2\**\*.cs" />
+  </ItemGroup>
+  <!-- Auto-copy 0Harmony.dll to Godot's build output -->
   <Target Name="CopyHarmony" AfterTargets="Build">
     <Copy SourceFiles="$(NuGetPackageRoot)lib.harmony\2.4.2\lib\net8.0\0Harmony.dll"
           DestinationFolder="$(ProjectDir).godot\mono\temp\bin\Debug\" SkipUnchangedFiles="true" />
