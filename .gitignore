@@ -1,0 +1,7 @@
+.godot/
+build/
+.hotswap/
+*.user/
+.vscode/
+*~
+mono_crashes.log
