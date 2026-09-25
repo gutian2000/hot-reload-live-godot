@@ -41,6 +41,10 @@ If your code calls `GetGeneric<Guid>()` or `GetGeneric<MyStruct>()`, that instan
 
 **Rationale**: .NET 8 CoreCLR compiles each value-type generic instantiation to a unique code body. Enumerating all possible combinations is infinite. The 8 common types cover ~95% of real-world usage.
 
+### ✅ Generic class methods (v1.1.1 fixed)
+
+Non-generic methods declared on generic type definitions (e.g. `GenericBox<T>.Set`) are now patched via per-instantiation constructed types (`GenericBox<object>`, `GenericBox<int>`, …), using the same 9 type-argument strategy as generic methods. This was broken in v1.1.0 (failed with `NotSupportedException`) — **v1.1.1 fixes it**.
+
 ---
 
 ## Soft Limitations (works but caveats apply)

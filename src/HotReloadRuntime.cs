@@ -364,6 +364,46 @@ namespace GodotHotReload
                         continue;
                     }
 
+                    // --- Non-generic method on generic TYPE definition → patch constructed type instantiations ---
+                    // (Harmony cannot patch methods on open generic type definitions)
+                    if (oldM.DeclaringType != null && oldM.DeclaringType.IsGenericTypeDefinition)
+                    {
+                        var typeDef = oldM.DeclaringType;
+                        var newTypeDef = newM.DeclaringType;
+                        var typeArity = typeDef.GetGenericArguments().Length;
+                        int thisPatched = 0;
+                        foreach (var typeArgs in EnumerateGenericTypeArgs(typeArity))
+                        {
+                            MethodBase oldConstructed;
+                            MethodInfo newConstructed;
+                            Type oldConstructedType;
+                            try
+                            {
+                                oldConstructedType = typeDef.MakeGenericType(typeArgs);
+                                oldConstructed = MethodBase.GetMethodFromHandle(oldM.MethodHandle, oldConstructedType.TypeHandle);
+                                var newConstructedType = newTypeDef.MakeGenericType(typeArgs);
+                                newConstructed = (MethodInfo)MethodBase.GetMethodFromHandle(newM.MethodHandle, newConstructedType.TypeHandle);
+                            }
+                            catch { continue; }
+                            if (_patched.Contains(oldConstructed)) continue;
+                            try
+                            {
+                                _dispatch[DispatchKey(oldConstructed)] = BuildGeneralStub(newConstructed, oldConstructedType);
+                                _harmony.Patch(oldConstructed, prefix: new HarmonyLib.HarmonyMethod(prefix));
+                                _patched.Add(oldConstructed);
+                                thisPatched++;
+                            }
+                            catch { }
+                        }
+                        if (thisPatched > 0)
+                        {
+                            genericPatched += thisPatched;
+                            added++;
+                            GD.Print($"[Hot Reload Live] ✅ Generic-class {typeDef.Name}.{oldM.Name} → {thisPatched} instantiations");
+                        }
+                        continue;
+                    }
+
                     // --- Iterator/async ENTRY methods: skip (Harmony patch corrupts state machine IL) ---
                     // But do NOT skip MoveNext! MoveNext gets patched below as a regular instance method
                     if ((isIteratorEntry || isAsyncEntry) && !oldM.IsStatic)

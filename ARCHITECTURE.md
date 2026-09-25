@@ -1,6 +1,11 @@
 # Godot Hot Reload Live — Architecture
 
-> v1.0 (2026-09-22) — Godot 4.7+ .NET 8 / C#
+> v1.1.1 (2026-09-25) — Godot 4.7+ .NET 8 / C#
+>
+> **v1.1.1 changelog**: fixed patching of non-generic methods on generic type definitions
+> (e.g. `GenericBox<T>.Set`) — previously failed with `NotSupportedException`; now patched
+> via per-instantiation constructed types (`GetMethodFromHandle(handle, constructedType.TypeHandle)`),
+> same 9 type-argument strategy as generic methods.
 
 ## 1. Process Model
 
@@ -55,10 +60,11 @@ GC.Collect() + alc.Unload() (optional, on next reload)
 | Static ref / out parameters | ✅ | Core |
 | Method overloads | ✅ | DispatchKey includes param types |
 | Generic static methods | ✅ | CoreCLR — no Mono ImportGenericParameter issue |
+| Generic class methods (non-generic method on `Foo<T>`) | ✅ | v1.1.1 — per-instantiation patch on constructed types |
+| Instance methods | ✅ | v1.1 — DynamicMethod IL stub (no castclass, bypasses cross-ALC identity) |
+| async / iterator MoveNext | ✅ | v1.1 — patch MoveNext; entry method skipped (IL corruption risk) |
 | Field layout guard | ✅ | Hash fields; skip if changed |
 | Restore All | ✅ | Harmony.UnpatchAll + clear dispatch |
-| Instance methods | ❌ | v1.1 — cross-ALC type identity prevents MethodInfo.Invoke |
-| Godot async/await MoveNext | ❌ | v1.1 — not Unity Coroutine; need different approach |
 | Multi-project cross-assembly | ❌ | Godot .NET single-assembly by default |
 
 ## 4. Godot-Specific Constraints
@@ -76,11 +82,11 @@ GC.Collect() + alc.Unload() (optional, on next reload)
 | Feature | Unity 2022.3 Mono | Godot 4.7 .NET 8 |
 |---------|-------------------|------------------|
 | Static methods | ✅ | ✅ |
-| Instance methods | ✅ (DynamicMethod IL) | ❌ (v1.1 target) |
+| Instance methods | ✅ (DynamicMethod IL) | ✅ (DynamicMethod IL) |
 | ref/out | ✅ | ✅ |
 | Overloads | ✅ | ✅ |
 | Generics | ✅ (constructed only) | ✅ |
-| Coroutine MoveNext | ✅ | ❌ (Godot uses async/await) |
+| Coroutine/async MoveNext | ✅ (Coroutine) | ✅ (async/iterator MoveNext) |
 | Field Guard | ✅ | ✅ |
 | Restore All | ✅ | ✅ |
 | Cross-assembly | ✅ (asmdef) | ❌ (single-assembly) |

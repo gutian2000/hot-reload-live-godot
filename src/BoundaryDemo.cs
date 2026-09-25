@@ -101,6 +101,10 @@ public partial class BoundaryDemo : Node
 		foreach (var n in IteratorGreet())
 			GD.Print("  iterator value: " + n);
 
+		// Generic class method
+		var box = new GenericBox<string>();
+		box.Set("box");
+
 		_round++;
 		if (_round % 10 == 0)
 			GD.Print($"[Boundary] === Round={_round}: all calls completed ===");
@@ -111,5 +115,5 @@ public partial class BoundaryDemo : Node
 public class GenericBox<T>
 {
 	public T Value;
-	public void Set(T v) { Value = v; }
+	public void Set(T v) { Value = v; GD.Print($"[Boundary] generic-class Set<{typeof(T).Name}> -> v1, value={v}"); }
 }
